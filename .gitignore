@@ -1,8 +1,8 @@
 # Secrets — never commit real credentials.
 .env
 
-# Build artifacts
-bin/
+# Build artifacts (root bin/ is the Go build output; installer/bin/ is source)
+/bin/
 dist/
 *.exe
 
