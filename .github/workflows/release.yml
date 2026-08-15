@@ -62,13 +62,14 @@ jobs:
   # Publish the npm installer so `npx chinchilla-llm-router` picks up the new
   # binary: repin llmRouter.version, bump the package version, publish, then
   # commit + push so the repo matches what's on the registry. Auth is via npm
-  # Trusted Publishing (OIDC): register a publisher on npmjs.com for issuer
-  # https://token.actions.githubusercontent.com, subject
-  # repository:DavidCastilloAlvarado/chinchilla-llm-router:release, package
-  # chinchilla-llm-router — no token/secret needed.
+  # Trusted Publishing (OIDC) — the publisher registered on npmjs.com is
+  # scoped to the `production` environment, so this job must run in it
+  # (create it under repo Settings → Environments if it doesn't exist yet).
+  # No token/secret needed.
   publish-npm:
     needs: build-and-release
     runs-on: ubuntu-latest
+    environment: production
     env:
       VERSION: ${{ github.event.inputs.version }}
     steps:
