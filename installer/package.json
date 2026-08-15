@@ -1,5 +1,5 @@
 {
-  "name": "llm-router-cli",
+  "name": "chinchilla-llm-router",
   "version": "0.1.0",
   "description": "Installer + interactive setup wizard for llm-router (OpenAI v1-compatible LLM router). Downloads the Go binary for your platform and generates config.yaml + .env in a friendly terminal wizard.",
   "license": "MIT",
@@ -16,7 +16,7 @@
   },
   "bin": {
     "llm-router": "bin/llm-router.js",
-    "llm-router-cli": "bin/llm-router.js"
+    "chinchilla-llm-router": "bin/llm-router.js"
   },
   "files": [
     "bin/",

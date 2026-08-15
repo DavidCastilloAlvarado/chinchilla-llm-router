@@ -11,3 +11,6 @@ dist/
 *.swp
 .idea/
 .vscode/
+
+# local session exports
+pi-session-*.html

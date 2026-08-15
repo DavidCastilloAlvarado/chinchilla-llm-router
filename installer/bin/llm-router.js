@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// llm-router-cli — installer + setup wizard for llm-router.
+// chinchilla-llm-router — installer + setup wizard for llm-router.
 //
-//   npx llm-router-cli              install binary + interactive setup
-//   npx llm-router-cli install      install the binary only
-//   npx llm-router-cli init         run the config wizard (or use flags)
-//   npx llm-router-cli doctor       check binary / config / running server
-//   npx llm-router-cli run          run the installed router
-//   npx llm-router-cli version      print versions
+//   npx chinchilla-llm-router              install binary + interactive setup
+//   npx chinchilla-llm-router install      install the binary only
+//   npx chinchilla-llm-router init         run the config wizard (or use flags)
+//   npx chinchilla-llm-router doctor       check binary / config / running server
+//   npx chinchilla-llm-router run          run the installed router
+//   npx chinchilla-llm-router version      print versions
 'use strict';
 
 const fs = require('node:fs');
@@ -23,10 +23,10 @@ const { execFileSync } = require('node:child_process');
 const pkg = require('../package.json');
 
 const HELP = `
-${ui.c.bold('llm-router-cli')} — install & configure llm-router
+${ui.c.bold('chinchilla-llm-router')} — install & configure llm-router
 
 ${ui.c.bold('usage:')}
-  npx llm-router-cli [command] [flags]
+  npx chinchilla-llm-router [command] [flags]
 
 ${ui.c.bold('commands:')}
   setup      (default) install the binary, then run the interactive setup wizard
@@ -120,7 +120,7 @@ function parseArgs(argv) {
 }
 
 function printVersion(p) {
-  console.log(`llm-router-cli ${pkg.version} (installer)`);
+  console.log(`chinchilla-llm-router ${pkg.version} (installer)`);
   const v = inst.installedVersion(p);
   console.log(v ? `llm-router ${v} (installed at ${p.bin})` : 'llm-router not installed yet');
 }
@@ -154,8 +154,8 @@ function finishSetup(p, data) {
 
   console.log('');
   ui.banner('done', 'next steps');
-  info(`start the router:   ${c.cyan('npx llm-router-cli run')}`);
-  info(`health check:       ${c.cyan('npx llm-router-cli doctor')}`);
+  info(`start the router:   ${c.cyan('npx chinchilla-llm-router run')}`);
+  info(`health check:       ${c.cyan('npx chinchilla-llm-router doctor')}`);
   const port = data.server.port;
   const auth = data.server.auth ? ` -H "Authorization: Bearer <ROUTER_API_KEY>"` : '';
   info(`try it:             ${c.cyan(`curl -s http://127.0.0.1:${port}/v1/models${auth ? '' : ''}`)}`);
@@ -230,7 +230,7 @@ async function main() {
 
     case 'run': {
       if (!fs.existsSync(p.config)) {
-        ui.fail(`no config at ${p.config} — run: npx llm-router-cli init`);
+        ui.fail(`no config at ${p.config} — run: npx chinchilla-llm-router init`);
         process.exit(1);
       }
       inst.runBinary(['-config', p.config], p);
@@ -254,7 +254,7 @@ async function main() {
         const redo = await ui.confirm(`config already exists at ${p.config} — reconfigure?`, false);
         if (!redo) {
           ui.info('keeping existing config');
-          ui.ok('start the router: ' + ui.c.cyan('npx llm-router-cli run'));
+          ui.ok('start the router: ' + ui.c.cyan('npx chinchilla-llm-router run'));
           return;
         }
       }

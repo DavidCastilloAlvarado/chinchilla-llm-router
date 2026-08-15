@@ -1,4 +1,4 @@
-# llm-router-cli
+# chinchilla-llm-router
 
 Installer for [llm-router](https://github.com/DavidCastilloAlvarado/chinchilla-llm-router) —
 an OpenAI v1-compatible LLM router with logical models, fallback/round-robin
@@ -14,7 +14,7 @@ Node is only used to install and launch it.
 ## Quick start
 
 ```sh
-npx llm-router-cli
+npx chinchilla-llm-router
 ```
 
 Interactive wizard: server (host/port/auth) → credentials (OpenAI, local
@@ -24,15 +24,15 @@ Secrets go only to `.env` (chmod 600); `config.yaml` uses `${VAR}` references.
 Then:
 
 ```sh
-npx llm-router-cli run      # start the router
-npx llm-router-cli doctor   # check binary, config, running server
-npx llm-router-cli version  # installer + binary versions
+npx chinchilla-llm-router run      # start the router
+npx chinchilla-llm-router doctor   # check binary, config, running server
+npx chinchilla-llm-router version  # installer + binary versions
 ```
 
 ## Non-interactive (scripts / CI)
 
 ```sh
-npx llm-router-cli init \
+npx chinchilla-llm-router init \
   --cred vllm:local:http://192.168.18.200:1235/v1:sk-... \
   --model chat:chat:fallback:vllm:qwen3.8-27b \
   --port 8080 --auth

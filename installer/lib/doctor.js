@@ -10,7 +10,7 @@ const { c, ok, fail, info } = require('./ui');
 function checkBinary(p) {
   if (!fs.existsSync(p.bin)) {
     fail(`binary not found at ${p.bin}`);
-    info(`fix: npx llm-router-cli install`);
+    info(`fix: npx chinchilla-llm-router install`);
     return false;
   }
   let version = '?';
@@ -27,7 +27,7 @@ function checkBinary(p) {
 function checkConfig(p) {
   if (!fs.existsSync(p.config)) {
     fail(`config not found at ${p.config}`);
-    info('fix: npx llm-router-cli init');
+    info('fix: npx chinchilla-llm-router init');
     return false;
   }
   if (!fs.existsSync(p.env)) {
@@ -80,7 +80,7 @@ function checkServer(p) {
     req.on('timeout', () => req.destroy(new Error('timeout')));
     req.on('error', () => {
       fail(`server: not reachable at http://${h}:${port}`);
-      info(`start it: npx llm-router-cli run   (or: ${p.bin} -config ${p.config})`);
+      info(`start it: npx chinchilla-llm-router run   (or: ${p.bin} -config ${p.config})`);
       resolve(false);
     });
   });
@@ -99,7 +99,7 @@ async function doctor(p) {
     return 0;
   }
   if (a && b) {
-    ok(c.green('install and config are good — start the server: ' + c.cyan('npx llm-router-cli run')));
+    ok(c.green('install and config are good — start the server: ' + c.cyan('npx chinchilla-llm-router run')));
     return 0;
   }
   fail('issues found — see above');

@@ -49,11 +49,11 @@ Built on the official [`openai-go`](https://github.com/openai/openai-go) SDK
 
 ### One-liner (recommended)
 
-`npx llm-router-cli` downloads the pre-built Go binary for your platform and
+`npx chinchilla-llm-router` downloads the pre-built Go binary for your platform and
 runs an interactive setup wizard that writes `config.yaml` + `.env` for you:
 
 ```sh
-npx llm-router-cli
+npx chinchilla-llm-router
 ```
 
 The wizard walks through: **server** (host, port, client auth) →
@@ -78,9 +78,9 @@ Everything installs under `~/.llm-router/` (override with `--dir` or
 Then:
 
 ```sh
-npx llm-router-cli run      # start the router
-npx llm-router-cli doctor   # check binary, config validity, running server
-npx llm-router-cli version  # print installer + binary versions
+npx chinchilla-llm-router run      # start the router
+npx chinchilla-llm-router doctor   # check binary, config validity, running server
+npx chinchilla-llm-router version  # print installer + binary versions
 ```
 
 ### Non-interactive setup
@@ -88,7 +88,7 @@ npx llm-router-cli version  # print installer + binary versions
 For scripts and CI, `init` accepts flags instead of the wizard:
 
 ```sh
-npx llm-router-cli init \
+npx chinchilla-llm-router init \
   --cred vllm:local:http://192.168.18.200:1235/v1:sk-... \
   --model chat:chat:fallback:vllm:qwen3.8-27b \
   --model fast:chat:round_robin:vllm:qwen3.8-27b \
@@ -396,7 +396,7 @@ internal/metrics/           Prometheus metrics (requests, attempts, reroutes,
 internal/envfile/           .env loader (KEY=VALUE → process environment)
 internal/testutil/          fake OpenAI-compatible upstream for tests
 e2e/                        end-to-end tests against a real upstream
-installer/                  npx installer (llm-router-cli): binary download,
+installer/                  npx installer (chinchilla-llm-router): binary download,
                             interactive setup wizard, doctor, run
 .github/workflows/release.yml  cross-compile + GitHub Release publishing
 dist/                       release artifacts (make release output, gitignored)

@@ -110,7 +110,7 @@ function printPathHint(p) {
 // runBinary(args, p) — exec the installed binary (used by `run`).
 function runBinary(args, p) {
   if (!fs.existsSync(p.bin)) {
-    ui.fail(`binary not found at ${p.bin} — run: npx llm-router-cli install`);
+    ui.fail(`binary not found at ${p.bin} — run: npx chinchilla-llm-router install`);
     process.exit(1);
   }
   try {
