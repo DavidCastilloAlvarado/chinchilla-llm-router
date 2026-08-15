@@ -45,7 +45,89 @@ Built on the official [`openai-go`](https://github.com/openai/openai-go) SDK
   container log drivers); startup failures log the error and exit non-zero.
 - **Docker**: multi-stage build, non-root runtime, healthcheck, Compose file.
 
-## Quick start
+## Installation
+
+### One-liner (recommended)
+
+`npx llm-router-cli` downloads the pre-built Go binary for your platform and
+runs an interactive setup wizard that writes `config.yaml` + `.env` for you:
+
+```sh
+npx llm-router-cli
+```
+
+The wizard walks through: **server** (host, port, client auth) →
+**credentials** (OpenAI, local OpenAI-compatible, or Azure) → **logical
+models** (name, domain, routing mode, backends, optional per-model timeouts)
+→ **defaults** (timeout / reroute timeout / cooldown) → summary → write.
+Secrets are entered with hidden input and land only in `.env` (chmod 600);
+`config.yaml` references them as `${VAR}`.
+
+Everything installs under `~/.llm-router/` (override with `--dir` or
+`$LLM_ROUTER_HOME`):
+
+```
+~/.llm-router/
+├── bin/llm-router     the Go binary (PATH is updated in your shell rc)
+├── config.yaml        generated config (${VAR} references only)
+├── .env               your secrets (chmod 600)
+├── downloads/         cached release tarballs
+└── version.json       installed version + source URL
+```
+
+Then:
+
+```sh
+npx llm-router-cli run      # start the router
+npx llm-router-cli doctor   # check binary, config validity, running server
+npx llm-router-cli version  # print installer + binary versions
+```
+
+### Non-interactive setup
+
+For scripts and CI, `init` accepts flags instead of the wizard:
+
+```sh
+npx llm-router-cli init \
+  --cred vllm:local:http://192.168.18.200:1235/v1:sk-... \
+  --model chat:chat:fallback:vllm:qwen3.8-27b \
+  --model fast:chat:round_robin:vllm:qwen3.8-27b \
+  --port 8080 --auth
+```
+
+- `--cred name:kind:url:key` — repeatable; `kind` is `openai`, `local`
+  (OpenAI-compatible base URL), or `azure` (endpoint URL). The key must not
+  contain `:`.
+- `--model name:domain:mode:cred:upstream-model` — repeatable; `mode` is
+  `fallback` or `round_robin`.
+- `--auth` enables client auth (a key is auto-generated when `--api-key`
+  is omitted); `--no-auth` disables it.
+- `--timeout 120s --reroute-timeout 10s --cooldown 30s` set the defaults.
+
+The generated config is validated by the router itself (`-check`) before the
+command finishes.
+
+### Other commands & flags
+
+| Command | What it does |
+|---------|--------------|
+| `setup` (default) | Install the binary, then run the interactive wizard |
+| `install` | Install the binary only (skips if already installed) |
+| `init` | Generate config — interactively, or with the flags above |
+| `doctor` | Check binary, config validity, and a running server |
+| `run` | Run the installed router with the installed config |
+| `version` | Print installer + installed binary versions |
+
+Useful flags: `--dir <dir>` (install root), `--version <v>` (binary version),
+`--force` (reinstall). Environment: `LLM_ROUTER_HOME` (install root),
+`LLM_ROUTER_VERSION` (binary version), `LLM_ROUTER_RELEASE_BASE` (self-hosted
+release base URL).
+
+Supported platforms: Linux and macOS (Darwin), `amd64` and `arm64`. Windows
+is not supported — use WSL or Docker. Requires Node.js ≥ 18 (for `npx`);
+the installed router itself is a standalone Go binary.
+
+### Building from source
 
 A [Makefile](Makefile) provides the basic commands:
 
@@ -55,7 +137,14 @@ make test      # unit tests (fake upstream, no network)
 make e2etest   # e2e tests against a real upstream (auto-skips if unreachable)
 ```
 
-Other targets: `make run`, `make vet`, `make fmt`, `make clean`, `make docker`.
+Other targets: `make run`, `make vet`, `make fmt`, `make clean`, `make docker`,
+`make release VERSION=x.y.z` (cross-compiles linux/darwin × amd64/arm64
+tarballs + `checksums.txt` into `./dist` — used by the
+[GitHub release workflow](.github/workflows/release.yml), which publishes
+them on `v*` tags for the `npx` installer to download).
+
+The router binary also supports `-version` (print version) and `-check`
+(validate the config file and exit without starting the server).
 
 ### Secrets: `.env`
 
@@ -305,5 +394,9 @@ internal/metrics/           Prometheus metrics (requests, attempts, reroutes,
 internal/envfile/           .env loader (KEY=VALUE → process environment)
 internal/testutil/          fake OpenAI-compatible upstream for tests
 e2e/                        end-to-end tests against a real upstream
+installer/                  npx installer (llm-router-cli): binary download,
+                            interactive setup wizard, doctor, run
+.github/workflows/release.yml  cross-compile + GitHub Release publishing
+dist/                       release artifacts (make release output, gitignored)
 Dockerfile, docker-compose.yml, .dockerignore, .gitignore
 ```

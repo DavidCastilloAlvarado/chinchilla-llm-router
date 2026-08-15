@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -33,11 +34,20 @@ import (
 	"llm-router/internal/router"
 )
 
+// version is set at build time via -ldflags "-X main.version=vX.Y.Z".
+var version = "dev"
+
 func main() {
 	configPath := flag.String("config", os.Getenv("LLM_ROUTER_CONFIG"), "config.yaml")
+	checkOnly := flag.Bool("check", false, "validate the config file and exit (no server started)")
+	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
 	if *configPath == "" {
 		*configPath = "config.yaml"
+	}
+	if *showVersion {
+		fmt.Println("llm-router " + version)
+		return
 	}
 
 	// Structured JSON logs on stdout.
@@ -63,6 +73,10 @@ func main() {
 		// Critical startup failure: log to stdout and exit non-zero.
 		log.Error("startup failed: cannot load config", "path", *configPath, "error", err)
 		os.Exit(1)
+	}
+	if *checkOnly {
+		log.Info("config ok", "path", *configPath, "models", len(cfg.Models), "credentials", len(cfg.Credentials))
+		return
 	}
 
 	r, err := router.NewRouter(cfg, router.WithMetrics(m))

@@ -1,0 +1,33 @@
+{
+  "name": "llm-router-cli",
+  "version": "0.1.0",
+  "description": "Installer + interactive setup wizard for llm-router (OpenAI v1-compatible LLM router). Downloads the Go binary for your platform and generates config.yaml + .env in a friendly terminal wizard.",
+  "license": "MIT",
+  "keywords": [
+    "llm",
+    "router",
+    "openai",
+    "azure",
+    "vllm",
+    "installer"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "llm-router": "bin/llm-router.js",
+    "llm-router-cli": "bin/llm-router.js"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "llmRouter": {
+    "repo": "DavidCastilloAlvarado/chinchilla-llm-router",
+    "version": "0.1.0"
+  }
+}
