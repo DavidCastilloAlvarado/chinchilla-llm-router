@@ -160,15 +160,26 @@ the binary version being released and bump `version` above the latest npm
 publish, then commit. The workflow validates both up front and fails fast
 with a clear message if they don't match — CI never rewrites versions, and
 tags are never pushed by hand. After the release it publishes the npm
-installer as-is (`npm publish --provenance`), so
-`npx chinchilla-llm-router` picks up the new binary on the next run. That
-step authenticates via npm Trusted Publishing (OIDC) — one-time setup:
-enable "Allow GitHub Actions to create OIDC tokens" (repo Settings
-→ Developer settings → GitHub Actions) and register a publisher on
-npmjs.com (package → Publishing → Trusted publishing) for issuer
-`https://token.actions.githubusercontent.com`, subject
-`repository:DavidCastilloAlvarado/chinchilla-llm-router:release` — no
-tokens or secrets stored anywhere.
+installer as-is (`npm publish --access public --provenance`), so
+`npx chinchilla-llm-router` picks up the new binary on the next run.
+
+Publishing authenticates via **npm Trusted Publishing (OIDC)** — no
+tokens or secrets stored anywhere. One-time setup:
+
+1. Repo Settings → Developer settings → GitHub Actions: enable
+   "Allow GitHub Actions to create OIDC tokens".
+2. npmjs.com → package → Publishing → Trusted publishing: add a
+   **GitHub Actions** publisher for organization `DavidCastilloAlvarado`,
+   repository `chinchilla-llm-router`, workflow `release.yml`,
+   environment `production` (the `publish-npm` job runs in that
+   environment, so create it under Settings → Environments first).
+3. Keep the `repository` field in `installer/package.json` —
+   `--provenance` validation rejects the publish if it is missing or
+   doesn't match the GitHub repo.
+
+The `publish-npm` job uses Node 24 (npm 11) on purpose: npm 11's
+`publish` performs the OIDC token exchange automatically, while npm 10
+fails with `ENEEDAUTH`.
 
 The router binary also supports `-version` (print version) and `-check`
 (validate the config file and exit without starting the server).
