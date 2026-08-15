@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write   # OIDC token for npm Trusted Publishing (no stored secret)
 
 jobs:
   build-and-release:
@@ -60,24 +61,22 @@ jobs:
 
   # Publish the npm installer so `npx chinchilla-llm-router` picks up the new
   # binary: repin llmRouter.version, bump the package version, publish, then
-  # commit + push so the repo matches what's on the registry. Requires the
-  # NODE_AUTH_TOKEN repo secret (granular npm token with publish access to
-  # chinchilla-llm-router).
+  # commit + push so the repo matches what's on the registry. Auth is via npm
+  # Trusted Publishing (OIDC): register a publisher on npmjs.com for issuer
+  # https://token.actions.githubusercontent.com, subject
+  # repository:DavidCastilloAlvarado/chinchilla-llm-router:release, package
+  # chinchilla-llm-router — no token/secret needed.
   publish-npm:
     needs: build-and-release
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ github.event.inputs.version }}
-      NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Verify npm auth
-        run: npm whoami
 
       - name: Publish npm installer (repoint binary pin)
         working-directory: installer
@@ -95,7 +94,7 @@ jobs:
             fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
           "
           npm version patch --no-git-tag-version
-          npm publish --access public
+          npm publish --access public --provenance
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add package.json

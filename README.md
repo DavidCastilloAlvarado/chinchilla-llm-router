@@ -159,8 +159,13 @@ the format and creates the tag + release itself, so tags are never pushed
 by hand. After the release it also republishes the npm installer:
 `llmRouter.version` is repointed at the new binary, the package version is
 bumped, and `npm publish` runs — so `npx chinchilla-llm-router` picks up the
-new binary on the next run. That step needs a `NODE_AUTH_TOKEN` repo secret
-(granular npm token with publish access to `chinchilla-llm-router`).
+new binary on the next run. That step authenticates via npm Trusted
+Publishing (OIDC) — one-time setup: enable "Allow GitHub Actions to create
+OIDC tokens" (repo Settings → Developer settings → GitHub Actions) and
+register a publisher on npmjs.com (package → Publishing → Trusted
+publishing) for issuer `https://token.actions.githubusercontent.com`,
+subject `repository:DavidCastilloAlvarado/chinchilla-llm-router:release` —
+no tokens or secrets stored anywhere.
 
 The router binary also supports `-version` (print version) and `-check`
 (validate the config file and exit without starting the server).
