@@ -121,6 +121,23 @@ jobs:
         with:
           node-version: 24
 
+      # TEMPORARY diagnostic (remove after the first successful publish):
+      # prints the exact iss/sub/aud claims of the OIDC token npm will use,
+      # so the npmjs.com trusted-publisher Subject can be matched to it.
+      # Only the claims are printed — never the token itself.
+      - name: "Debug: print OIDC token claims"
+        run: |
+          set -euo pipefail
+          JWT="$(curl -sS -H 'Accept: application/json; api-version=1.0' \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}?audience=npm%3Aregistry.npmjs.org" | jq -r .value)"
+          node -e '
+            const payload = process.argv[1].split(".")[1];
+            const b64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+            const c = JSON.parse(Buffer.from(b64, "base64").toString("utf8"));
+            console.log(JSON.stringify({ iss: c.iss, sub: c.sub, aud: c.aud }, null, 2));
+          ' "$JWT"
+
       - name: Publish npm installer
         working-directory: installer
         run: |
