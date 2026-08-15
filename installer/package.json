@@ -1,6 +1,6 @@
 {
   "name": "chinchilla-llm-router",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Installer + interactive setup wizard for llm-router (OpenAI v1-compatible LLM router). Downloads the Go binary for your platform and generates config.yaml + .env in a friendly terminal wizard.",
   "license": "MIT",
   "keywords": [

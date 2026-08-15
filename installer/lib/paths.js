@@ -4,6 +4,8 @@
 //   <root>/.env               secret values (chmod 600, never committed)
 //   <root>/downloads/         temp download area
 //   <root>/version.json       { version, installedAt, url }
+//   <root>/llm-router.pid     pid of the detached server (when started via `run`)
+//   <root>/logs/llm-router.log  server stdout/stderr (JSON log lines)
 'use strict';
 
 const os = require('node:os');
@@ -25,6 +27,8 @@ function pathsFor(root) {
     env: path.join(r, '.env'),
     downloads: path.join(r, 'downloads'),
     versionFile: path.join(r, 'version.json'),
+    pidFile: path.join(r, 'llm-router.pid'),
+    logFile: path.join(r, 'logs', 'llm-router.log'),
   };
 }
 

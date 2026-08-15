@@ -5,7 +5,9 @@
 //   npx chinchilla-llm-router install      install the binary only
 //   npx chinchilla-llm-router init         run the config wizard (or use flags)
 //   npx chinchilla-llm-router doctor       check binary / config / running server
-//   npx chinchilla-llm-router run          run the installed router
+//   npx chinchilla-llm-router run          start the router detached (restarts if running)
+//   npx chinchilla-llm-router stop         stop the detached router
+//   npx chinchilla-llm-router status       show whether the router is running
 //   npx chinchilla-llm-router version      print versions
 'use strict';
 
@@ -38,7 +40,11 @@ ${ui.c.bold('commands:')}
                --auth --api-key sk-...         (client auth; key auto-generated if omitted)
                --timeout 120s --reroute-timeout 10s --cooldown 30s
   doctor     check binary, config validity and running server
-  run        run the installed router with the installed config
+  run        start the router in the background (detached) and return immediately;
+             restarts it first if an instance is already running
+               --foreground   block the terminal instead (old behavior, for debugging)
+  stop       stop the background router (started by \`run\`)
+  status     show whether the background router is running
   version    print installer + installed binary versions
 
 ${ui.c.bold('flags:')}
@@ -78,6 +84,9 @@ function parseArgs(argv) {
         break;
       case '--force':
         flags.force = true;
+        break;
+      case '--foreground':
+        flags.foreground = true;
         break;
       case '--auth':
         flags.auth = true;
@@ -154,8 +163,9 @@ function finishSetup(p, data) {
 
   console.log('');
   ui.banner('done', 'next steps');
-  info(`start the router:   ${c.cyan('npx chinchilla-llm-router run')}`);
+  info(`start the router:   ${c.cyan('npx chinchilla-llm-router run')}   (detached; restarts if already running)`);
   info(`health check:       ${c.cyan('npx chinchilla-llm-router doctor')}`);
+  info(`stop the router:    ${c.cyan('npx chinchilla-llm-router stop')}`);
   const port = data.server.port;
   const auth = data.server.auth ? ` -H "Authorization: Bearer <ROUTER_API_KEY>"` : '';
   info(`try it:             ${c.cyan(`curl -s http://127.0.0.1:${port}/v1/models${auth ? '' : ''}`)}`);
@@ -229,11 +239,17 @@ async function main() {
     }
 
     case 'run': {
-      if (!fs.existsSync(p.config)) {
-        ui.fail(`no config at ${p.config} — run: npx chinchilla-llm-router init`);
-        process.exit(1);
-      }
-      inst.runBinary(['-config', p.config], p);
+      await inst.cmdRun(p, { foreground: flags.foreground });
+      return;
+    }
+
+    case 'stop': {
+      await inst.cmdStop(p);
+      return;
+    }
+
+    case 'status': {
+      await inst.cmdStatus(p);
       return;
     }
 

@@ -72,16 +72,27 @@ Everything installs under `~/.llm-router/` (override with `--dir` or
 ├── config.yaml        generated config (${VAR} references only)
 ├── .env               your secrets (chmod 600)
 ├── downloads/         cached release tarballs
-└── version.json       installed version + source URL
+├── version.json       installed version + source URL
+├── llm-router.pid     pid of the detached server (when started via `run`)
+└── logs/llm-router.log  server log (JSON lines; `tail -f` it)
 ```
 
 Then:
 
 ```sh
-npx chinchilla-llm-router run      # start the router
+npx chinchilla-llm-router run      # start the router in the background (returns immediately)
+npx chinchilla-llm-router status   # is it running?
+npx chinchilla-llm-router stop     # stop it
 npx chinchilla-llm-router doctor   # check binary, config validity, running server
 npx chinchilla-llm-router version  # print installer + binary versions
 ```
+
+`run` starts the router **detached** (its own process, survives the terminal
+closing) and returns as soon as `/healthz` answers. If an installer-managed
+instance is already running, `run` restarts it first — so `run` doubles as a
+reboot command. Use `run --foreground` to block the terminal instead (old
+behavior, handy for debugging); logs of a detached server go to
+`~/.llm-router/logs/llm-router.log`.
 
 ### Non-interactive setup
 
@@ -115,11 +126,13 @@ command finishes.
 | `install` | Install the binary only (skips if already installed) |
 | `init` | Generate config — interactively, or with the flags above |
 | `doctor` | Check binary, config validity, and a running server |
-| `run` | Run the installed router with the installed config |
+| `run` | Start the router detached (restarts it first if already running); `--foreground` blocks the terminal |
+| `stop` | Stop the detached router (SIGTERM, then SIGKILL if needed) |
+| `status` | Show whether the detached router is running |
 | `version` | Print installer + installed binary versions |
 
 Useful flags: `--dir <dir>` (install root), `--version <v>` (binary version),
-`--force` (reinstall). Environment: `LLM_ROUTER_HOME` (install root),
+`--force` (reinstall), `--foreground` (with `run`). Environment: `LLM_ROUTER_HOME` (install root),
 `LLM_ROUTER_VERSION` (binary version), `LLM_ROUTER_RELEASE_BASE` (self-hosted
 release base URL).
 
@@ -397,7 +410,7 @@ internal/envfile/           .env loader (KEY=VALUE → process environment)
 internal/testutil/          fake OpenAI-compatible upstream for tests
 e2e/                        end-to-end tests against a real upstream
 installer/                  npx installer (chinchilla-llm-router): binary download,
-                            interactive setup wizard, doctor, run
+                            interactive setup wizard, doctor, run/stop/status
 .github/workflows/release.yml  cross-compile + GitHub Release publishing
 dist/                       release artifacts (make release output, gitignored)
 Dockerfile, docker-compose.yml, .dockerignore, .gitignore
