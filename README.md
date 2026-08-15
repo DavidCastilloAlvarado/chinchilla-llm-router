@@ -140,8 +140,10 @@ make e2etest   # e2e tests against a real upstream (auto-skips if unreachable)
 Other targets: `make run`, `make vet`, `make fmt`, `make clean`, `make docker`,
 `make release VERSION=x.y.z` (cross-compiles linux/darwin × amd64/arm64
 tarballs + `checksums.txt` into `./dist` — used by the
-[GitHub release workflow](.github/workflows/release.yml), which publishes
-them on `v*` tags for the `npx` installer to download).
+[GitHub release workflow](.github/workflows/release.yml), which is run
+manually from the Actions tab with a `vX.Y.Z` version input; it validates
+the format and creates the tag + release itself, so tags are never pushed
+by hand).
 
 The router binary also supports `-version` (print version) and `-check`
 (validate the config file and exit without starting the server).

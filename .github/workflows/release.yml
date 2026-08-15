@@ -1,9 +1,16 @@
 name: release
 
+# Manual release: run from the Actions tab (or `gh workflow run release
+# -f version=vX.Y.Z`). The version input is validated against the required
+# format, and the tag is created by the release step — you never push tags
+# by hand.
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version — must match v<major>.<minor>.<patch> (e.g. v0.1.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -11,8 +18,26 @@ permissions:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ github.event.inputs.version }}
     steps:
+      - name: Validate version format
+        run: |
+          if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$VERSION' is not a valid release version — required format: v<major>.<minor>.<patch> (e.g. v0.1.0)"
+            exit 1
+          fi
+          echo "version format OK: $VERSION"
+
       - uses: actions/checkout@v4
+
+      - name: Reject if tag already exists
+        run: |
+          if git ls-remote --tags origin "refs/tags/$VERSION" | grep -q "refs/tags/$VERSION"; then
+            echo "::error::Tag $VERSION already exists — delete the existing release first, or pick a new version"
+            exit 1
+          fi
+          echo "tag $VERSION is free"
 
       - uses: actions/setup-go@v5
         with:
@@ -22,11 +47,12 @@ jobs:
         run: make test
 
       - name: Cross-compile release binaries
-        run: make release VERSION="${GITHUB_REF_NAME#v}"
+        run: make release VERSION="${VERSION#v}"
 
-      - name: Publish GitHub release
+      - name: Publish GitHub release (creates the tag)
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.inputs.version }}
           files: |
             dist/llm-router_*.tar.gz
             dist/checksums.txt
