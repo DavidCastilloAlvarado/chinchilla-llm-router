@@ -15,7 +15,7 @@ const pkg = require('../package.json');
 
 // resolveVersion(explicit) -> "x.y.z" (no leading v).
 function resolveVersion(explicit) {
-  const v = explicit || process.env.LLM_ROUTER_VERSION || (pkg.llmRouter && pkg.llmRouter.version) || '0.1.0';
+  const v = explicit || process.env.LLM_ROUTER_VERSION || (pkg.llmRouter && pkg.llmRouter.version) || '0.2.0';
   return String(v).replace(/^v/, '');
 }
 

@@ -61,7 +61,7 @@ docker:
 ## without leading v (e.g. 0.1.0). Produces:
 ##   dist/llm-router_<VERSION>_<os>_<arch>.tar.gz  (linux/darwin x amd64/arm64)
 ##   dist/checksums.txt
-VERSION ?= 0.1.0
+VERSION ?= 0.2.0
 
 release:
 	@mkdir -p dist
