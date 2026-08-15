@@ -1,0 +1,16 @@
+services:
+  llm-router:
+    build: .
+    image: llm-router:latest
+    container_name: llm-router
+    ports:
+      - "1236:8080"
+    volumes:
+      # Override the baked-in config with a local one if present.
+      - ./config.yaml:/etc/llm-router/config.yaml:ro
+      # The router loads ./.env from its working directory at startup;
+      # mount it so all variables (upstream credentials, router key, ...)
+      # come from a single file. Mounted .env values take priority over
+      # any -e / environment values.
+      - ./.env:/app/.env:ro
+    restart: unless-stopped

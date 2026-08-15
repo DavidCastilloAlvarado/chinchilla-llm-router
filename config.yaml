@@ -1,0 +1,96 @@
+# llm-router configuration.
+#
+# Logical models are grouped by domain/app. Each logical model is backed by
+# one or more upstream models/deployments that reference reusable
+# credentials (OpenAI or Azure OpenAI / Azure AI Foundry).
+#
+# Secrets are NEVER hardcoded here: values reference environment variables
+# with ${VAR} syntax. At startup the router loads ./.env (if present) into
+# the environment first — .env values take priority over system env — then
+# expands the ${VAR} references. See .env.example for the full variable list.
+
+server:
+  host: 0.0.0.0
+  port: 8080
+  # Optional: when set, clients must send "Authorization: Bearer <api_key>".
+  api_key: ${ROUTER_API_KEY}
+
+defaults:
+  # Overall request budget. Exceeding it means the service is out of service.
+  timeout: 120s
+  # Time allowed until the first response byte before rerouting to the next
+  # backend (fallback mode) or marking a backend as failed (round_robin).
+  # This is separate from, and shorter than, the overall timeout.
+  reroute_timeout: 10s
+  # How long a failed/timed-out backend is skipped in round_robin mode.
+  cooldown: 30s
+
+credentials:
+  openai-main:
+    type: openai
+    api_key: ${OPENAI_API_KEY}
+    # base_url: https://api.openai.com/v1   # default; override for proxies
+
+  azure-foundry:
+    type: azure
+    # Azure AI Foundry / Azure OpenAI resource endpoint.
+    endpoint: ${AZURE_OPENAI_ENDPOINT}     # e.g. https://my-resource.cognitiveservices.azure.com
+    api_key: ${AZURE_OPENAI_API_KEY}
+    api_version: "2024-10-21"
+
+  # Local vLLM / any OpenAI-compatible server (uncomment to use).
+  # vllm-local:
+  #   type: openai
+  #   api_key: ${VLLM_API_KEY}
+  #   base_url: ${VLLM_BASE_URL}           # e.g. http://192.168.18.200:1235/v1
+
+models:
+  # --- domain/app: chat -------------------------------------------------
+  - name: chat-fast
+    domain: chat
+    mode: fallback            # try backends in order; reroute on error or
+                              # if the first byte takes longer than reroute_timeout
+    backends:
+      - credential: openai-main
+        model: gpt-4o-mini
+      - credential: azure-foundry
+        model: gpt-4o-mini-deployment
+
+  - name: chat-reasoning
+    domain: chat
+    mode: round_robin         # distribute across backends that have not
+                              # recently timed out / failed
+    timeout: 180s
+    reroute_timeout: 15s
+    cooldown: 60s
+    backends:
+      - credential: openai-main
+        model: o3-mini
+      - credential: azure-foundry
+        model: o3-mini-deployment
+
+  # --- domain/app: embeddings -------------------------------------------
+  - name: embed
+    domain: embeddings
+    mode: round_robin
+    backends:
+      - credential: openai-main
+        model: text-embedding-3-small
+      - credential: azure-foundry
+        model: embedding-deployment
+
+  # --- Thinking (reasoning) models, e.g. local vLLM + qwen3 --------------
+  # Thinking responses can take well over the default reroute_timeout before
+  # the (non-streaming) response arrives, so give thinking models a wide
+  # reroute_timeout and a matching overall timeout. Streaming thinking works
+  # with the defaults (first byte is fast).
+  #
+  # - name: think
+  #   domain: chat
+  #   mode: fallback
+  #   timeout: 240s          # overall budget for the whole request
+  #   reroute_timeout: 120s  # non-streaming: full thinking response must
+  #                          # arrive within this window
+  #   backends:
+  #     - credential: vllm-local
+  #       model: qwen3.8-27b

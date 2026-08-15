@@ -1,0 +1,12 @@
+# Secrets — never commit real credentials.
+.env
+
+# Build artifacts
+bin/
+*.exe
+
+# Editor / OS noise
+.DS_Store
+*.swp
+.idea/
+.vscode/
