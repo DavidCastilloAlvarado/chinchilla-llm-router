@@ -154,18 +154,21 @@ Other targets: `make run`, `make vet`, `make fmt`, `make clean`, `make docker`,
 `make release VERSION=x.y.z` (cross-compiles linux/darwin × amd64/arm64
 tarballs + `checksums.txt` into `./dist` — used by the
 [GitHub release workflow](.github/workflows/release.yml), which is run
-manually from the Actions tab with a `vX.Y.Z` version input; it validates
-the format and creates the tag + release itself, so tags are never pushed
-by hand. After the release it also republishes the npm installer:
-`llmRouter.version` is repointed at the new binary, the package version is
-bumped, and `npm publish` runs — so `npx chinchilla-llm-router` picks up the
-new binary on the next run. That step authenticates via npm Trusted
-Publishing (OIDC) — one-time setup: enable "Allow GitHub Actions to create
-OIDC tokens" (repo Settings → Developer settings → GitHub Actions) and
-register a publisher on npmjs.com (package → Publishing → Trusted
-publishing) for issuer `https://token.actions.githubusercontent.com`,
-subject `repository:DavidCastilloAlvarado/chinchilla-llm-router:release` —
-no tokens or secrets stored anywhere.
+manually from the Actions tab with a `vX.Y.Z` version input. Before
+dispatching, prepare `installer/package.json`: set `llmRouter.version` to
+the binary version being released and bump `version` above the latest npm
+publish, then commit. The workflow validates both up front and fails fast
+with a clear message if they don't match — CI never rewrites versions, and
+tags are never pushed by hand. After the release it publishes the npm
+installer as-is (`npm publish --provenance`), so
+`npx chinchilla-llm-router` picks up the new binary on the next run. That
+step authenticates via npm Trusted Publishing (OIDC) — one-time setup:
+enable "Allow GitHub Actions to create OIDC tokens" (repo Settings
+→ Developer settings → GitHub Actions) and register a publisher on
+npmjs.com (package → Publishing → Trusted publishing) for issuer
+`https://token.actions.githubusercontent.com`, subject
+`repository:DavidCastilloAlvarado/chinchilla-llm-router:release` — no
+tokens or secrets stored anywhere.
 
 The router binary also supports `-version` (print version) and `-check`
 (validate the config file and exit without starting the server).

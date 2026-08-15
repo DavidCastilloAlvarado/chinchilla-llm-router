@@ -3,7 +3,10 @@ name: release
 # Manual release: run from the Actions tab (or `gh workflow run release
 # -f version=vX.Y.Z`). The version input is validated against the required
 # format, and the tag is created by the release step — you never push tags
-# by hand.
+# by hand. Before dispatching, prepare installer/package.json: set
+# llmRouter.version to the binary version being released and bump version
+# above the latest npm publish — the workflow validates both up front and
+# fails fast if they don't match. CI never rewrites versions.
 on:
   workflow_dispatch:
     inputs:
@@ -32,6 +35,42 @@ jobs:
 
       - uses: actions/checkout@v4
 
+      # Fail fast if the installer package isn't prepared for this release:
+      # llmRouter.version must equal the binary version being released, and
+      # the package version must be newer than everything already on npm.
+      # Versions are set by hand in installer/package.json before dispatch.
+      - name: Validate installer/package.json for this release
+        run: |
+          BIN_VERSION="${VERSION#v}"
+          PUBLISHED=$(npm view chinchilla-llm-router versions --json 2>/dev/null || echo '[]')
+          BIN_VERSION="$BIN_VERSION" PUBLISHED="$PUBLISHED" node - <<'EOF'
+          const fs = require('fs');
+          const p = JSON.parse(fs.readFileSync('installer/package.json', 'utf8'));
+          const bin = process.env.BIN_VERSION;
+          const published = JSON.parse(process.env.PUBLISHED || '[]');
+          const num = (v) => v.split('.').map(Number);
+          const cmp = (a, b) => {
+            a = num(a); b = num(b);
+            for (let i = 0; i < 3; i++) if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) - (b[i] || 0);
+            return 0;
+          };
+          const errors = [];
+          if (p.llmRouter.version !== bin) {
+            errors.push(`llmRouter.version is '${p.llmRouter.version}' but this release is v${bin} — set it to '${bin}'`);
+          }
+          if (published.includes(p.version)) {
+            errors.push(`version '${p.version}' is already published on npm — bump the version field`);
+          } else if (published.some((v) => cmp(p.version, v) < 0)) {
+            errors.push(`version '${p.version}' is older than published versions (${published.sort((x, y) => cmp(x, y)).join(', ')}) — bump the version field`);
+          }
+          if (errors.length) {
+            for (const e of errors) console.error(`::error::installer/package.json is not ready for release v${bin}: ${e}`);
+            console.error('::error::Fix installer/package.json, commit, and re-dispatch the release.');
+            process.exit(1);
+          }
+          console.log(`installer/package.json OK: version=${p.version}, llmRouter.version=${p.llmRouter.version} (npm published: ${published.length ? published.join(', ') : 'none'})`);
+          EOF
+
       - name: Reject if tag already exists
         run: |
           if git ls-remote --tags origin "refs/tags/$VERSION" | grep -q "refs/tags/$VERSION"; then
@@ -59,45 +98,32 @@ jobs:
             dist/checksums.txt
           generate_release_notes: true
 
-  # Publish the npm installer so `npx chinchilla-llm-router` picks up the new
-  # binary: repin llmRouter.version, bump the package version, publish, then
-  # commit + push so the repo matches what's on the registry. Auth is via npm
-  # Trusted Publishing (OIDC) — the publisher registered on npmjs.com is
-  # scoped to the `production` environment, so this job must run in it
-  # (create it under repo Settings → Environments if it doesn't exist yet).
-  # No token/secret needed.
+  # Publish the npm installer exactly as committed — the versions were
+  # validated up front in build-and-release, so this job never rewrites
+  # package.json. Auth is npm Trusted Publishing (OIDC): with `id-token:
+  # write`, npm 11 (Node 24) fetches the GitHub OIDC token itself and
+  # exchanges it for a short-lived registry token — no token/secret stored.
+  # The publisher registered on npmjs.com is scoped to the `production`
+  # environment, so this job runs in it (create it under repo Settings →
+  # Environments if it doesn't exist yet).
   publish-npm:
     needs: build-and-release
     runs-on: ubuntu-latest
     environment: production
-    env:
-      VERSION: ${{ github.event.inputs.version }}
     steps:
       - uses: actions/checkout@v4
 
+      # Node 24 ships npm 11, whose `publish` command automatically picks up
+      # the runner's OIDC token (id-token: write) and exchanges it for a
+      # short-lived npm registry token. npm 10 (Node 22) does not do this
+      # and fails with ENEEDAUTH.
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
-      - name: Publish npm installer (repoint binary pin)
+      - name: Publish npm installer
         working-directory: installer
         run: |
-          BIN_VERSION="${VERSION#v}"
-          CURRENT_PIN=$(node -p "require('./package.json').llmRouter.version")
-          if [ "$CURRENT_PIN" = "$BIN_VERSION" ]; then
-            echo "installer already pins binary $BIN_VERSION — nothing to publish"
-            exit 0
-          fi
-          node -e "
-            const fs = require('fs');
-            const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            p.llmRouter.version = '$BIN_VERSION';
-            fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
-          "
-          npm version patch --no-git-tag-version
-          npm publish --access public --provenance
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json
-          git commit -m "release: pin llm-router binary $BIN_VERSION"
-          git push
+          # --loglevel verbose: if the automatic OIDC flow is ever skipped or
+          # fails, the reason is printed here instead of a bare ENEEDAUTH.
+          npm publish --access public --provenance --loglevel verbose
