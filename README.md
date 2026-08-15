@@ -156,7 +156,11 @@ tarballs + `checksums.txt` into `./dist` — used by the
 [GitHub release workflow](.github/workflows/release.yml), which is run
 manually from the Actions tab with a `vX.Y.Z` version input; it validates
 the format and creates the tag + release itself, so tags are never pushed
-by hand).
+by hand. After the release it also republishes the npm installer:
+`llmRouter.version` is repointed at the new binary, the package version is
+bumped, and `npm publish` runs — so `npx chinchilla-llm-router` picks up the
+new binary on the next run. That step needs a `NODE_AUTH_TOKEN` repo secret
+(granular npm token with publish access to `chinchilla-llm-router`).
 
 The router binary also supports `-version` (print version) and `-check`
 (validate the config file and exit without starting the server).
@@ -411,7 +415,7 @@ internal/testutil/          fake OpenAI-compatible upstream for tests
 e2e/                        end-to-end tests against a real upstream
 installer/                  npx installer (chinchilla-llm-router): binary download,
                             interactive setup wizard, doctor, run/stop/status
-.github/workflows/release.yml  cross-compile + GitHub Release publishing
+.github/workflows/release.yml  cross-compile + GitHub Release + npm publish
 dist/                       release artifacts (make release output, gitignored)
 Dockerfile, docker-compose.yml, .dockerignore, .gitignore
 ```
